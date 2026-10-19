@@ -1,0 +1,53 @@
+/* Global design tokens, reset, and shared page container. */
+
+:root {
+  color-scheme: light;
+  --page: #f5f2ef;
+  --surface: #fffdfb;
+  --surface-soft: #ebe7e3;
+  --ink: #1b1919;
+  --ink-soft: #625d5c;
+  --ink-muted: #817a78;
+  --line: #d8d0cc;
+  --accent: #e3342f;
+  --accent-dark: #b51f25;
+  --forest: #151313;
+  --forest-light: #272121;
+  --shadow: 0 18px 42px rgba(27, 20, 20, 0.11);
+  --content-width: 1860px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 6rem;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(ellipse at 12% 12%, rgba(227, 52, 47, 0.055), transparent 28rem),
+    var(--page);
+  color: var(--ink);
+  font-family: "Inter", sans-serif;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+.container {
+  width: min(var(--content-width), calc(100% - clamp(2rem, 8vw, 7rem)));
+  margin-inline: auto;
+}
