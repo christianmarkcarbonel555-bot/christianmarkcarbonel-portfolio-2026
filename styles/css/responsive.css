@@ -161,6 +161,7 @@
   }
 
   .certificate-item {
+    flex-basis: 72vw;
     padding: 0.85rem;
   }
 

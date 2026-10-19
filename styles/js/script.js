@@ -12,9 +12,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const slides = Array.from(track.querySelectorAll('.certificate-item:not(.certificate-duplicate)'));
   const slideCount = slides.length;
-  const trackSlideCount = track.querySelectorAll('.certificate-item').length;
+  const leadingClone = slides[slideCount - 1].cloneNode(true);
+  leadingClone.removeAttribute('id');
+  leadingClone.classList.add('certificate-duplicate');
+  leadingClone.setAttribute('aria-hidden', 'true');
+  leadingClone.querySelector('.carousel-controls')?.remove();
+  const cloneLink = leadingClone.querySelector('a');
+  if (cloneLink) {
+    cloneLink.removeAttribute('href');
+    cloneLink.removeAttribute('target');
+    cloneLink.removeAttribute('rel');
+    cloneLink.tabIndex = -1;
+  }
+  track.prepend(leadingClone);
+
+  const trackSlides = Array.from(track.querySelectorAll('.certificate-item'));
   const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
-  let position = 0;
+  let position = 1;
   let pointerStartX = null;
   let suppressClick = false;
   let isHovered = false;
@@ -33,32 +47,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function setPosition(nextPosition) {
     position = nextPosition;
-    track.style.transform = `translateX(-${(position * 100) / trackSlideCount}%)`;
+    trackSlides.forEach((slide, index) => {
+      slide.classList.toggle('is-active', index === position);
+      slide.classList.toggle('is-adjacent', Math.abs(index - position) === 1);
+    });
+    const activeSlide = trackSlides[position];
+    const offset = carousel.clientWidth / 2 - (activeSlide.offsetLeft + activeSlide.offsetWidth / 2);
+    track.style.transform = `translateX(${offset}px)`;
   }
 
   function moveTo(nextPosition) {
     if (motionPreference.matches) {
-      setPosition(nextPosition >= slideCount ? 0 : nextPosition);
+      if (nextPosition <= 0) {
+        setPosition(slideCount);
+      } else if (nextPosition >= slideCount + 1) {
+        setPosition(1);
+      } else {
+        setPosition(nextPosition);
+      }
       return;
     }
     setPosition(nextPosition);
   }
 
   function advance() {
-    moveTo(position >= slideCount - 1 ? slideCount : position + 1);
+    moveTo(position + 1);
   }
 
   function goToPrevious() {
-    if (position === 0 && !motionPreference.matches) {
-      track.style.transition = 'none';
-      setPosition(slideCount);
-      track.getBoundingClientRect();
-      track.style.removeProperty('transition');
-      moveTo(slideCount - 1);
-      return;
-    }
-    moveTo(position <= 0 ? slideCount - 1 : position - 1);
+    moveTo(position - 1);
   }
+
+  setPosition(position);
 
   carousel.addEventListener('click', (event) => {
     if (suppressClick) {
@@ -80,25 +100,35 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    if (position === slideCount - 1 && targetSlide === 0) {
-      moveTo(slideCount);
-    } else if (position === 0 && targetSlide === slideCount - 1) {
-      goToPrevious();
+    if (position === slideCount && targetSlide === 0) {
+      moveTo(slideCount + 1);
+    } else if (position === 1 && targetSlide === slideCount - 1) {
+      moveTo(0);
     } else {
-      moveTo(targetSlide);
+      moveTo(targetSlide + 1);
     }
     scheduleAutoplay();
   });
 
   track.addEventListener('transitionend', (event) => {
-    if (event.target !== track || event.propertyName !== 'transform' || position !== slideCount) {
+    if (
+      event.target !== track ||
+      event.propertyName !== 'transform' ||
+      (position !== 0 && position !== slideCount + 1)
+    ) {
       return;
     }
 
     track.style.transition = 'none';
-    setPosition(0);
+    trackSlides.forEach((slide) => {
+      slide.style.transition = 'none';
+    });
+    setPosition(position === 0 ? slideCount : 1);
     track.getBoundingClientRect();
     track.style.removeProperty('transition');
+    trackSlides.forEach((slide) => {
+      slide.style.removeProperty('transition');
+    });
   });
 
   carousel.addEventListener('pointerdown', (event) => {
@@ -130,6 +160,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   carousel.addEventListener('pointercancel', () => {
     pointerStartX = null;
+  });
+  window.addEventListener('resize', () => {
+    setPosition(position);
   });
   carousel.addEventListener('pointerenter', () => {
     isHovered = true;
